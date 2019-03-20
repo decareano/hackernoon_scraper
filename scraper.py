@@ -25,6 +25,14 @@ class scraper:
 
         return self
 
+    def _get_soup(self, url):
+        page = requests.get(url)
+
+        # raise an exception if page did not load
+        page.raise_for_status()
+        soup = BeautifulSoup(page.text, 'html.parser')
+        return soup
+
     def put(self, name, url):
         # print("Putting (%s, %s) into %s queue" % (name, url, id(self.queue)))
         p = Process(target=self.batch, args=(self, ))
@@ -79,13 +87,9 @@ class archive_scraper(scraper):
         self.years = year_scraper()
 
     def worker(self, name, url, *args):
-        # print("Retrieving all the %s for %s..." % (name, url))
+        print("Retrieving all the %s for %s..." % (name, url))
 
-        page = requests.get(url)
-
-        # raise an exception if page did not load
-        page.raise_for_status()
-        soup = BeautifulSoup(page.text, 'html.parser')
+        soup = self._get_soup(url)
 
         for year in soup.select('div[class~=timebucket] a'):
             self.years.put(year.text, year.attrs['href'])
@@ -102,13 +106,9 @@ class year_scraper(scraper):
         super().__init__()
 
     def worker(self, name, url, *args):
-        # print("Retrieving all the %s for %s..." % (name, url))
+        print("Retrieving all the %s for %s..." % (name, url))
 
-        page = requests.get(url)
-
-        # raise an exception if page did not load
-        page.raise_for_status()
-        soup = BeautifulSoup(page.text, 'html.parser')
+        soup = self._get_soup(url)
 
         months = {}
         for year in soup.select('div[class~=timebucket] a'):
