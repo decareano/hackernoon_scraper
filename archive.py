@@ -19,6 +19,8 @@ logger = logging.getLogger("hackernoon")
 logging.getLogger("chardet.charsetprober").disabled = True
 
 
+articles = []
+
 async def fetch_html(url: str, session: aiohttp.ClientSession) -> str:
     """GET request wrapper to fetch page HTML.
 
@@ -109,7 +111,7 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
         for tag in soup.select("ul[class~=tags] li"):
             tags.append(tag.text)
 
-        logger.info(f"    ARTICLE: {title}, {author}, {date}, {tags}")
+        articles.append((title, author, date, tags))
 
 
 async def consume(level: str, q: asyncio.Queue) -> None:
@@ -130,6 +132,8 @@ async def main(ncon: int) -> None:
             logger.info(f"Cancelling consumer <{id(c)}>")
             c.cancel()
 
+    for a in articles:
+        logger.info(a)
 
 if __name__ == "__main__":
     assert sys.version_info >= (3, 7), "Script requires Python 3.7+."
