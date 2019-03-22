@@ -55,14 +55,30 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
         new_level = "year"
     elif level == "year":
         new_level = "month"
+    elif level == "month":
+        new_level = "day"
 
     if new_level is None:
         return None
 
+    found = set()
     for item in soup.select('div[class~=timebucket] a'):
+        if new_level == "day":
+            found.add(url)
         item_url = item.attrs['href']
         logger.debug(f"  Queueing {item.text} url {item_url}")
         await q.put((new_level, item_url, session))
+
+    # should really use classes
+    if new_level == "day" and not found:
+        # some months are not separated into days
+        for item in soup.select('div[class~=postArticle-readMore] a'):
+            item_url = item.attrs['href']
+            if not item_url:
+                continue
+            logger.debug(f"  [no days in month] Queuing {item.text} "
+                         f"url {item_url}")
+            await q.put((new_level, item_url, session))
 
 
 async def consume(level: str, q: asyncio.Queue) -> None:
