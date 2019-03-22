@@ -89,7 +89,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("-c", "--ncon", type=int, default=10)
+    parser.add_argument("-c", "--ncon", type=int, default=10,
+                        help="number of consumers in thread pool")
 
     ns = parser.parse_args()
 
