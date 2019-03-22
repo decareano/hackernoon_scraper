@@ -20,6 +20,7 @@ logging.getLogger("chardet.charsetprober").disabled = True
 
 
 articles = []
+max_tags = []
 
 async def fetch_html(url: str, session: aiohttp.ClientSession) -> str:
     """GET request wrapper to fetch page HTML.
@@ -110,7 +111,7 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
         tags = []
         for tag in soup.select("ul[class~=tags] li"):
             tags.append(tag.text)
-
+        max_tags.append(len(tags))
         articles.append((title, author, date, tags))
 
 
