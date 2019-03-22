@@ -2,9 +2,21 @@
 
 import argparse
 import asyncio
+import logging
+import sys
 
 import aiohttp
 import bs4
+
+
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s:%(name)s: %(message)s",
+    level=logging.INFO,
+    datefmt="%H:%M:%S",
+    stream=sys.stderr,
+)
+logger = logging.getLogger("hackernoon")
+logging.getLogger("chardet.charsetprober").disabled = True
 
 
 async def fetch_html(url: str, session: aiohttp.ClientSession) -> str:
@@ -25,14 +37,14 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
     e.g. Iterate over all the years in an archive page to then drill down into
     the months.
     """
-    print(f"Fetching url {url}")
+    logger.info(f"Fetching url {url}")
     try:
         html = await fetch_html(url, session)
     except aiohttp.ClientError as e:
-        print(f"aiohttp exception for {url} [{e.status}]: {e.message}")
+        logger.exception(f"aiohttp exception for {url} [{e.status}]: {e.message}")
         return None
     except Exception as e:
-        print(f"Unknown exception for {url} [{e.status}]: {e.message}")
+        logger.exception(f"Unknown exception for {url} [{e.status}]: {e.message}")
         return None
 
     soup = bs4.BeautifulSoup(html, 'html.parser')
@@ -49,14 +61,14 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
 
     for item in soup.select('div[class~=timebucket] a'):
         item_url = item.attrs['href']
-        print(f"  Queueing {item.text} url {item_url}")
+        logger.debug(f"  Queueing {item.text} url {item_url}")
         await q.put((new_level, item_url, session))
 
 
 async def consume(level: str, q: asyncio.Queue) -> None:
     while True:
         l, url, session = await q.get()
-        print(f"Consuming {url}")
+        logger.debug(f"Consuming {url}")
         await parse_and_queue(l, url, session, q)
         q.task_done()
 
@@ -68,7 +80,7 @@ async def main(ncon: int) -> None:
         consumers = [asyncio.create_task(consume(n, q)) for n in range(ncon)]
         await q.join()
         for c in consumers:
-            print(f"Cancelling consumer <{id(c)}>")
+            logger.info(f"Cancelling consumer <{id(c)}>")
             c.cancel()
 
 
