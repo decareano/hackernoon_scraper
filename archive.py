@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+import csv
 import logging
 import sys
 
@@ -112,7 +113,7 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
         for tag in soup.select("ul[class~=tags] li"):
             tags.append(tag.text)
         max_tags.append(len(tags))
-        articles.append((title, author, date, tags))
+        articles.append((title, url, author, date, tags))
 
 
 async def consume(level: str, q: asyncio.Queue) -> None:
@@ -133,8 +134,18 @@ async def main(ncon: int) -> None:
             logger.info(f"Cancelling consumer <{id(c)}>")
             c.cancel()
 
-    for a in articles:
-        logger.info(a)
+    mt = max(max_tags)
+    with open('output.csv', 'w') as f:
+        csv_articles = csv.writer(f)
+        tag_headers = [f"Tag {i+1}" for i in range(mt)]
+        csv_articles.writerow(["Title", "Link", "Author",
+                               "pubDate"] + tag_headers)
+        for a in articles:
+            logger.debug(a)
+            row = list(a[:3])
+            for t in a[4]:
+                row.append(t)
+            csv_articles.writerow(row)
 
 if __name__ == "__main__":
     assert sys.version_info >= (3, 7), "Script requires Python 3.7+."
