@@ -91,7 +91,12 @@ if __name__ == "__main__":
 
     parser.add_argument("-c", "--ncon", type=int, default=10,
                         help="number of consumers in thread pool")
+    parser.add_argument("-d", "--debug", action="store_true",
+                        help="increase output verbosity")
 
     ns = parser.parse_args()
+
+    if ns.debug:
+        logger.setLevel(logging.DEBUG)
 
     asyncio.run(main(ns.ncon))
