@@ -68,7 +68,7 @@ async def main(ncon: int) -> None:
         consumers = [asyncio.create_task(consume(n, q)) for n in range(ncon)]
         await q.join()
         for c in consumers:
-            print(f"Cancelling consumer <{c}>")
+            print(f"Cancelling consumer <{id(c)}>")
             c.cancel()
 
 
