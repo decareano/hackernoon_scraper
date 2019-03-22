@@ -41,10 +41,14 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
     try:
         html = await fetch_html(url, session)
     except aiohttp.ClientError as e:
-        logger.exception(f"aiohttp exception for {url} [{e.status}]: {e.message}")
+        status = getattr(e, "status", None)
+        message = getattr(e, "message", None)
+        logger.exception(f"aiohttp exception for {url} [{status}]: {message}")
         return None
     except Exception as e:
-        logger.exception(f"Unknown exception for {url} [{e.status}]: {e.message}")
+        status = getattr(e, "status", None)
+        message = getattr(e, "message", None)
+        logger.exception(f"Unknown exception for {url} [{status}]: {message}")
         return None
 
     soup = bs4.BeautifulSoup(html, 'html.parser')
