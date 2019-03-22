@@ -74,7 +74,10 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
                 found.add(url)
             item_url = item.attrs['href']
             logger.debug(f"  Queueing {item.text} url {item_url}")
-            await q.put((new_level, item_url, session))
+            if new_level != "year":
+                await q.put((new_level, item_url, session))
+            elif new_level == "year" and item.text == "2012":
+                await q.put((new_level, item_url, session))
 
         # should really use classes
         if new_level == "day" and not found:
