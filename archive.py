@@ -94,4 +94,4 @@ if __name__ == "__main__":
 
     ns = parser.parse_args()
 
-    asyncio.run(main(**ns.__dict__))
+    asyncio.run(main(ns.ncon))
