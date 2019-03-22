@@ -73,6 +73,8 @@ async def main(ncon: int) -> None:
 
 
 if __name__ == "__main__":
+    assert sys.version_info >= (3, 7), "Script requires Python 3.7+."
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-c", "--ncon", type=int, default=10)
