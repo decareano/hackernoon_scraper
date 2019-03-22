@@ -82,9 +82,9 @@ class scraper:
 class archive_scraper(scraper):
     """Scraps all the years of a hackernoon archive"""
 
-    def __init__(self):
+    def __init__(self, spool):
         super().__init__()
-        self.years = year_scraper()
+        self.years = year_scraper(spool)
 
     def worker(self, name, url, *args):
         print("Retrieving all the %s for %s..." % (name, url))
@@ -102,17 +102,62 @@ class archive_scraper(scraper):
 class year_scraper(scraper):
     """Scraps all the months in a year of a hackernoon archive"""
 
-    def __init__(self):
+    def __init__(self, spool):
         super().__init__()
+        self.months = month_scraper(spool)
 
     def worker(self, name, url, *args):
         print("Retrieving all the %s for %s..." % (name, url))
 
         soup = self._get_soup(url)
 
-        months = {}
         for year in soup.select('div[class~=timebucket] a'):
-            months[year.text] = year.attrs['href']
+            self.months.put(year.text, year.attrs['href'])
 
-        print(months)
+        self.months.finish()
         return self
+
+
+class month_scraper(scraper):
+    """Scraps all the days in a month of a hackernoon archive"""
+
+    def __init__(self, spool):
+        super().__init__()
+        self.spool = spool
+        # self.days = day_scraper()
+
+    def worker(self, name, url, *args):
+        print("Retrieving all the %s for %s..." % (name, url))
+
+        soup = self._get_soup(url)
+
+        days = {}
+        for year in soup.select('div[class~=timebucket] a'):
+            days[year.text] = year.attrs['href']
+            self.spool.day_queue.put(year.text, year.attrs['href'])
+
+        # if not days:
+        #     # some months are not separated into days
+        #     for article in soup.select('div[class~=postArticle-readMore] a'):
+        #         _articles.put(article.attrs['href'])
+
+        # self.days.finish()
+        self.spool.callback()
+        return self
+
+
+# class day_scraper(scraper):
+#     """Scraps all the articles in a day of a hackernoon archive"""
+
+#     def __init__(self):
+#         super().__init__()
+
+#     def worker(self, name, url, *args):
+#         print("Retrieving all the %s for %s..." % (name, url))
+
+#         soup = self._get_soup(url)
+
+#         for article in soup.select('div[class~=postArticle-readMore] a'):
+#             _articles.put(article.attrs['href'])
+
+#         return self

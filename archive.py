@@ -7,11 +7,16 @@ from scraper import (
     archive_scraper,
 )
 
+from scraper_pool import (
+    scraper_pool
+)
+
 url = 'https://hackernoon.com/archive'
 
 
 def main():
-    years = archive_scraper()
+    spool = scraper_pool()
+    years = archive_scraper(spool)
 
     years.put('archive', url)
     years.finish()
