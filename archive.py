@@ -103,7 +103,7 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
         author = soup.select("div[class~=section-content] "
                              "div div div div a")[0].text
         date = soup.select("div[class~=section-content] "
-                           "div div div div time")[0].text
+                           "div div div div time")[0].attrs["datetime"]
 
         tags = []
         for tag in soup.select("ul[class~=tags] li"):
