@@ -96,7 +96,7 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
 
     elif new_level == "article":
         for article in soup.select('div[class~=postArticle-readMore] a'):
-            item_url = item.attrs['href']
+            item_url = article.attrs['href']
             if not item_url:
                 continue
             logger.debug(f"  Queuing {item.text} url {item_url}")
