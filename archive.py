@@ -61,28 +61,52 @@ async def parse_and_queue(level: str, url: str, session: aiohttp.ClientSession,
         new_level = "month"
     elif level == "month":
         new_level = "day"
+    elif level == "day":
+        new_level = "article"
 
-    if new_level is None:
+    if new_level is None and level != "article":
         return None
 
-    found = set()
-    for item in soup.select('div[class~=timebucket] a'):
-        if new_level == "day":
-            found.add(url)
-        item_url = item.attrs['href']
-        logger.debug(f"  Queueing {item.text} url {item_url}")
-        await q.put((new_level, item_url, session))
+    if new_level != "article" and level != "article":
+        found = set()
+        for item in soup.select('div[class~=timebucket] a'):
+            if new_level == "day":
+                found.add(url)
+            item_url = item.attrs['href']
+            logger.debug(f"  Queueing {item.text} url {item_url}")
+            await q.put((new_level, item_url, session))
 
-    # should really use classes
-    if new_level == "day" and not found:
-        # some months are not separated into days
-        for item in soup.select('div[class~=postArticle-readMore] a'):
+        # should really use classes
+        if new_level == "day" and not found:
+            # some months are not separated into days
+            for item in soup.select('div[class~=postArticle-readMore] a'):
+                item_url = item.attrs['href']
+                if not item_url:
+                    continue
+                logger.debug(f"  [no days in month] Queuing {item.text} "
+                             f"url {item_url}")
+                await q.put(("article", item_url, session))
+
+    elif new_level == "article":
+        for article in soup.select('div[class~=postArticle-readMore] a'):
             item_url = item.attrs['href']
             if not item_url:
                 continue
-            logger.debug(f"  [no days in month] Queuing {item.text} "
-                         f"url {item_url}")
+            logger.debug(f"  Queuing {item.text} url {item_url}")
             await q.put((new_level, item_url, session))
+
+    elif level == "article":
+        title = soup.select("div[class~=section-content] div h1")[0].text
+        author = soup.select("div[class~=section-content] "
+                             "div div div div a")[0].text
+        date = soup.select("div[class~=section-content] "
+                           "div div div div time")[0].text
+
+        tags = []
+        for tag in soup.select("ul[class~=tags] li"):
+            tags.append(tag.text)
+
+        logger.info(f"    ARTICLE: {title}, {author}, {date}, {tags}")
 
 
 async def consume(level: str, q: asyncio.Queue) -> None:
